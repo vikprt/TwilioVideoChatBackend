@@ -7,6 +7,9 @@ var faker = require("faker");
 var AccessToken = require("twilio").jwt.AccessToken;
 var VideoGrant = AccessToken.VideoGrant;
 
+const config = require('./config');
+const { videoToken } = require('./tokens');
+
 
 const SWOOGO_API_KEY = process.env.SWOOGO_API_KEY;
 const SWOOGO_API_SECRET = process.env.SWOOGO_API_SECRET;
@@ -43,6 +46,22 @@ router.get('/getEvents', function(req, res, next) {
   }).catch((err) => {
     res.sendStatus(400)
   })
+});
+
+const sendTokenResponse = (token, res) => {
+  res.set('Content-Type', 'application/json');
+  res.send(
+    JSON.stringify({
+      token: token.toJwt()
+    })
+  );
+};
+
+router.post('/getToken', function(req, res, next) {
+  const identity = req.body.identity;
+  const room = req.body.room;
+  const token = videoToken(identity, room, config);
+  sendTokenResponse(token, res);
 });
 
 /* GET Event Members. */

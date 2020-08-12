@@ -9,6 +9,7 @@ var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/api');
 
 var app = express();
+app.io = require('socket.io')();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -38,6 +39,37 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+let onUsers = [];
+
+app.io.on("connection", function(socket) {
+
+  socket.on("init", function(data) {
+    if (!onUsers.includes(data.id)) onUsers.push(data.id);
+    socket.emit("onlineUsers", onUsers);
+    socket.broadcast.emit("onlineUsers", onUsers);
+  });
+
+  socket.on("disconnect", function() {
+    onUsers = [];
+    socket.emit("ping");
+    socket.broadcast.emit("ping");
+  });
+
+  socket.on("askVideoChat", function(data) {
+    socket.broadcast.emit("askVideoChat", data);
+  });
+
+  socket.on("allowVideoChat", function(data) {
+    socket.broadcast.emit("allowVideoChat", data);
+  });
+
+  socket.on("sendMessage", function(data) {
+    socket.emit("sendMessage", data);
+    socket.broadcast.emit("sendMessage", data);
+  });
+
 });
 
 module.exports = app;
